@@ -52,6 +52,24 @@ var verwerkBotsing = function() {
 
 };
 
+function updateSpelerPositie() {  
+  const snelheid = 5;
+
+if (keyIsDown(87)) {
+  spelerY -= snelheid;
+}
+if (keyIsDown(83)) {
+  spelerY += snelheid;
+}
+if (keyIsDown(65)) {
+  spelerX -= snelheid;
+}
+if (keyIsDown(68)) {
+  spelerX += snelheid;
+  }
+ }
+
+
 /**
  * Tekent spelscherm
  */
@@ -86,7 +104,7 @@ function setup() {
   createCanvas(1280, 720);
 
   // Kleur de achtergrond blauw, zodat je het kunt zien
-  background('blue');
+  
 }
 
 /**
@@ -96,6 +114,8 @@ function setup() {
  */
 function draw() {
   if (spelStatus === SPELEN) {
+    background('blue');
+    updateSpelerPositie();
     beweegAlles();
     verwerkBotsing();
     tekenAlles();
@@ -107,3 +127,4 @@ function draw() {
     // teken game-over scherm
   }
 }
+ 
