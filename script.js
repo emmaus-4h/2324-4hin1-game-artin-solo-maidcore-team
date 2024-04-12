@@ -1,17 +1,3 @@
-/* Game opdracht
-   Informatica - Emmauscollege Rotterdam
-   Template voor een game in JavaScript met de p5 library
-
-   Begin met dit template voor je game opdracht,
-   voeg er je eigen code aan toe.
- */
-
-/*
- * instellingen om foutcontrole van je code beter te maken 
- */
-///<reference path="p5.global-mode.d.ts" />
-"use strict"
-
 /* ********************************************* */
 /* globale variabelen die je gebruikt in je game */
 /* ********************************************* */
@@ -19,23 +5,96 @@ const SPELEN = 1;
 const GAMEOVER = 2;
 var spelStatus = SPELEN;
 
+var levens = 3; // aantal levens van de speler
+var schildTijd = 2; // tijd in seconden voor het schild
+var schildActief = false; // geeft aan of het schild actief is
+var schildBeginTijd = 0; // tijd waarop het schild begint
+
+var spelerBreedte = 50; // breedte van de speler (2 keer kleiner)
+var spelerHoogte = 50; // hoogte van de speler (2 keer kleiner)
 var spelerX = 600; // x-positie van speler
 var spelerY = 600; // y-positie van speler
 var health = 100;  // health van speler
 
+var vijandX = 100; // x-positie van vijand
+var vijandY = 200; // y-positie van vijand
+var vijandDiameter = 100; // diameter van de vijand (2 keer groter)
+var vijandSpeed = 3; // snelheid van de vijand
+var vijandDirection = 1; // richting van de vijand (1 voor rechts, -1 voor links)
+
+var kogels = []; // array om kogels van de vijand bij te houden
+
+var spelerSnelheidX = 0; // snelheid van de speler in de x-richting
+var spelerSnelheidY = 0; // snelheid van de speler in de y-richting
+
 /* ********************************************* */
 /* functies die je gebruikt in je game           */
 /* ********************************************* */
+
+// functie om de positie van de vijand te updaten
+var beweegVijand = function() {
+  // controleer of de vijand binnen het canvas blijft
+  if (vijandX <= 0 || vijandX >= width) {
+    // keer de richting om als de vijand de rand bereikt
+    vijandDirection *= -1;
+  }
+  // update de x-positie van de vijand met de snelheid en richting
+  vijandX += vijandSpeed * vijandDirection;
+
+  // schiet kogels
+  schietKogel();
+};
+
+// functie om een kogel van de vijand te maken
+var schietKogel = function() {
+  if (frameCount % 60 === 0) { // schiet elke seconde
+    for (var i = 0; i < 20; i++) { // schiet 20 kogels tegelijkertijd
+      var hoek = TWO_PI / 20 * i; // bereken hoek voor patroon
+      var kogel = {
+        x: vijandX,
+        y: vijandY,
+        diameter: 10,
+        snelheidX: cos(hoek) * 5, // x-snelheid volgens hoek
+        snelheidY: sin(hoek) * 5 // y-snelheid volgens hoek
+      };
+      kogels.push(kogel); // voeg kogel toe aan de array
+    }
+  }
+};
+
+// functie om de vijand te tekenen als Sakuya van Touhou
+var tekenVijand = function() {
+  fill('silver'); // zilverkleur voor Sakuya
+  ellipse(vijandX, vijandY, vijandDiameter, vijandDiameter); // teken de vijand als een cirkel
+  fill('black');
+  ellipse(vijandX - 20, vijandY - 10, 20, 20); // linkeroog
+  ellipse(vijandX + 20, vijandY - 10, 20, 20); // rechteroog
+  rect(vijandX - 20, vijandY + 10, 40, 10); // mond
+};
+
+// functie om kogels van de vijand te tekenen
+var tekenKogels = function() {
+  fill('red'); // kleur van kogels
+  for (var i = 0; i < kogels.length; i++) {
+    ellipse(kogels[i].x, kogels[i].y, kogels[i].diameter, kogels[i].diameter);
+  }
+};
 
 /**
  * Updatet globale variabelen met posities van speler, vijanden en kogels
  */
 var beweegAlles = function() {
   // speler
+  updateSpelerPositie();
 
   // vijand
+  beweegVijand();
 
-  // kogel
+  // kogel van de vijand
+  for (var i = 0; i < kogels.length; i++) {
+    kogels[i].x += kogels[i].snelheidX;
+    kogels[i].y += kogels[i].snelheidY;
+  }
 };
 
 /**
@@ -45,49 +104,109 @@ var beweegAlles = function() {
  */
 var verwerkBotsing = function() {
   // botsing speler tegen vijand
+  var afstand = dist(spelerX, spelerY, vijandX, vijandY);
+  if (afstand < spelerBreedte / 2 + vijandDiameter / 2) {
+    if (!schildActief) {
+      levens--;
+      if (levens > 0) {
+        respawnSpeler(); // respawn de speler als hij levens over heeft
+        schildActief = true;
+        schildBeginTijd = millis();
+      }
+    }
+  }
 
-  // botsing kogel tegen vijand
+  // botsing speler tegen kogels van de vijand
+  for (var i = 0; i < kogels.length; i++) {
+    var afstandKogelSpeler = dist(spelerX, spelerY, kogels[i].x, kogels[i].y);
+    if (afstandKogelSpeler < spelerBreedte / 2) {
+      if (!schildActief) {
+        levens--;
+        if (levens > 0) {
+          respawnSpeler(); // respawn de speler als hij levens over heeft
+          schildActief = true;
+          schildBeginTijd = millis();
+        }
+      }
+    }
+  }
 
   // update punten en health
+};
 
+// functie om de speler te laten respawnen met een schild
+var respawnSpeler = function() {
+  spelerX = 600;
+  spelerY = 600;
+  schildActief = true;
+  schildBeginTijd = millis();
+};
+
+// functie om het schild van de speler te beheren
+var beheerSchild = function() {
+  if (schildActief) {
+    var verstrekenTijd = (millis() - schildBeginTijd) / 1000;
+    if (verstrekenTijd >= schildTijd) {
+      schildActief = false;
+    }
+  }
 };
 
 function updateSpelerPositie() {  
   const snelheid = 5;
 
-if (keyIsDown(87)) {
-  spelerY -= snelheid;
-}
-if (keyIsDown(83)) {
-  spelerY += snelheid;
-}
-if (keyIsDown(65)) {
-  spelerX -= snelheid;
-}
-if (keyIsDown(68)) {
-  spelerX += snelheid;
+  // controleer of de speler binnen het canvas blijft en update positie dienovereenkomstig
+  if (keyIsDown(87) && spelerY > 0) {
+    spelerSnelheidY = -snelheid;
   }
- }
+  if (keyIsDown(83) && spelerY < height - spelerHoogte) {
+    spelerSnelheidY = snelheid;
+  }
+  if (keyIsDown(65) && spelerX > 0) {
+    spelerSnelheidX = -snelheid;
+  }
+  if (keyIsDown(68) && spelerX < width - spelerBreedte) {
+    spelerSnelheidX = snelheid;
+  }
 
+  // Update de positie van de speler op basis van de berekende snelheden
+  spelerX += spelerSnelheidX;
+  spelerY += spelerSnelheidY;
+}
 
 /**
  * Tekent spelscherm
  */
 var tekenAlles = function() {
   // achtergrond
+  background('blue');
 
   // vijand
+  tekenVijand();
 
-  // kogel
+  // kogels van de vijand
+  tekenKogels();
 
-  // speler
-  fill("white");
-  rect(spelerX - 25, spelerY - 25, 50, 50);
+  // speler als Marisa van Touhou
+  fill("goldenrod"); // goudkleur voor Marisa
+  ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte, spelerHoogte); // hoofd van Marisa
   fill("black");
-  ellipse(spelerX, spelerY, 10, 10);
+  ellipse(spelerX + 30, spelerY + 15, 10, 10); // linkeroog
+  ellipse(spelerX + 70, spelerY + 15, 10, 10); // rechteroog
+  rect(spelerX + 25, spelerY + 30, 50, 10); // mond
 
   // punten en health
+  fill("white");
+  text("Levens: " + levens, 10, 20);
+};
 
+// functie om het game-over scherm te tekenen
+var tekenGameOverScherm = function() {
+  background('black');
+  fill('white');
+  textSize(50);
+  textAlign(CENTER, CENTER);
+  text("Game Over", width / 2, height / 2);
 };
 
 /* ********************************************* */
@@ -104,7 +223,6 @@ function setup() {
   createCanvas(1280, 720);
 
   // Kleur de achtergrond blauw, zodat je het kunt zien
-  
 }
 
 /**
@@ -114,17 +232,15 @@ function setup() {
  */
 function draw() {
   if (spelStatus === SPELEN) {
-    background('blue');
-    updateSpelerPositie();
     beweegAlles();
+    beheerSchild();
     verwerkBotsing();
     tekenAlles();
-    if (health <= 0) {
+    if (levens <= 0) {
       spelStatus = GAMEOVER;
     }
   }
   if (spelStatus === GAMEOVER) {
-    // teken game-over scherm
+    tekenGameOverScherm();
   }
 }
- 
