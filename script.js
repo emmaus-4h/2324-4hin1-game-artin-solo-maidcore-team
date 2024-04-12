@@ -155,17 +155,21 @@ var beheerSchild = function() {
 function updateSpelerPositie() {  
   const snelheid = 5;
 
-  // controleer of de speler binnen het canvas blijft en update positie dienovereenkomstig
-  if (keyIsDown(87) && spelerY > 0) {
+  // Reset de snelheid wanneer geen toetsen worden ingedrukt
+  spelerSnelheidX = 0;
+  spelerSnelheidY = 0;
+
+  // Controleer welke toetsen worden ingedrukt en update de snelheid dienovereenkomstig
+  if (keyIsDown(87) && spelerY > 0) { // W-toets
     spelerSnelheidY = -snelheid;
   }
-  if (keyIsDown(83) && spelerY < height - spelerHoogte) {
+  if (keyIsDown(83) && spelerY < height - spelerHoogte) { // S-toets
     spelerSnelheidY = snelheid;
   }
-  if (keyIsDown(65) && spelerX > 0) {
+  if (keyIsDown(65) && spelerX > 0) { // A-toets
     spelerSnelheidX = -snelheid;
   }
-  if (keyIsDown(68) && spelerX < width - spelerBreedte) {
+  if (keyIsDown(68) && spelerX < width - spelerBreedte) { // D-toets
     spelerSnelheidX = snelheid;
   }
 
@@ -173,6 +177,7 @@ function updateSpelerPositie() {
   spelerX += spelerSnelheidX;
   spelerY += spelerSnelheidY;
 }
+
 
 /**
  * Tekent spelscherm
@@ -187,13 +192,13 @@ var tekenAlles = function() {
   // kogels van de vijand
   tekenKogels();
 
-  // speler als Marisa van Touhou
-  fill("goldenrod"); // goudkleur voor Marisa
-  ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte, spelerHoogte); // hoofd van Marisa
+  
+  fill("goldenrod"); 
+  ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte, spelerHoogte); 
   fill("black");
-  ellipse(spelerX + 30, spelerY + 15, 10, 10); // linkeroog
-  ellipse(spelerX + 70, spelerY + 15, 10, 10); // rechteroog
-  rect(spelerX + 25, spelerY + 30, 50, 10); // mond
+  ellipse(spelerX + 30, spelerY + 15, 10, 10); 
+  ellipse(spelerX + 70, spelerY + 15, 10, 10); 
+  rect(spelerX + 25, spelerY + 30, 50, 10); 
 
   // punten en health
   fill("white");
