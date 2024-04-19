@@ -5,16 +5,18 @@ const SPELEN = 1;
 const GAMEOVER = 2;
 const STARTSCHERM = 0;
 var spelStatus = STARTSCHERM;
-var levens = 3; // aantal levens van de speler
+var medicijnen = 3; // aantal medicijnen van de speler
 var schildTijd = 2; // tijd in seconden voor het schild
 var schildActief = false; // geeft aan of het schild actief is
 var schildBeginTijd = 0; // tijd waarop het schild begint
 
-var spelerBreedte = 50; // breedte van de speler (2 keer kleiner)
-var spelerHoogte = 50; // hoogte van de speler (2 keer kleiner)
+var spelerBreedte = 25; // breedte van de speler (2 keer kleiner)
+var spelerHoogte = 25; // hoogte van de speler (2 keer kleiner)
 var spelerX = 600; // x-positie van speler
 var spelerY = 600; // y-positie van speler
 var health = 100;  // health van speler
+var score = 0; // score van de speler
+var hoogsteScore = 0; // hoogste score bereikt door de speler
 
 var vijandX = 100; // x-positie van vijand
 var vijandY = 200; // y-positie van vijand
@@ -42,8 +44,6 @@ var tekenStartScherm = function() {
   text("Begin", width / 2, height / 2 + 50);
 };
 
-
-
 // Functie om de muisinteractie te controleren
 function mouseClicked() {
   if (spelStatus === STARTSCHERM && mouseX > width / 2 - 50 && mouseX < width / 2 + 50 && mouseY > height / 2 + 25 && mouseY < height / 2 + 75) {
@@ -56,13 +56,14 @@ function mouseClicked() {
 // Functie om het spel te resetten
 function resetSpel() {
   spelStatus = STARTSCHERM;
-  levens = 3;
+  medicijnen = 3;
   spelerX = 600;
   spelerY = 600;
   health = 100;
   vijandX = 100;
   vijandY = 200;
   kogels = [];
+  score = 0; // Reset de score
 }
 
 // Setup functie
@@ -74,10 +75,6 @@ function setup() {
 function draw() {
   tekenSchermen();
 }
-
-
-
-
 
 // functie om de positie van de vijand te updaten
 var beweegVijand = function() {
@@ -122,9 +119,26 @@ var tekenVijand = function() {
 
 // functie om kogels van de vijand te tekenen
 var tekenKogels = function() {
-  fill('red'); // kleur van kogels
   for (var i = 0; i < kogels.length; i++) {
-    ellipse(kogels[i].x, kogels[i].y, kogels[i].diameter, kogels[i].diameter);
+    // Teken een aangepaste kogel die lijkt op een mes
+    // De kogel wordt getekend als een driehoek om de punt van het mes te simuleren
+    stroke('#000000'); // zwarte rand voor de kogel
+    strokeWeight(2); // dikte van de rand
+    fill('#FFFFFF'); // witte kleur voor de kogel
+    // Bereken de hoek van de kogel met een extra 45 graden
+    var hoek = atan2(kogels[i].snelheidY, kogels[i].snelheidX) + PI/4;
+    // Nog eens 45 graden toevoegen aan de hoek
+    hoek += PI/4;
+    push(); // Bewaar de huidige transformatie-instellingen
+    translate(kogels[i].x, kogels[i].y); // Verplaats naar de positie van de kogel
+    rotate(hoek); // Roteer de kogel naar de berekende hoek
+    // Teken de kogel als een driehoek om de punt van het mes te simuleren
+    beginShape();
+    vertex(-4, 0); // linkerbovenhoek
+    vertex(4, 0); // rechterbovenhoek
+    vertex(0, 30); // punt van de kogel (verlengde diagonale lijn)
+    endShape(CLOSE);
+    pop(); // Herstel de oorspronkelijke transformatie-instellingen
   }
 };
 
@@ -155,9 +169,9 @@ var verwerkBotsing = function() {
   var afstand = dist(spelerX, spelerY, vijandX, vijandY);
   if (afstand < spelerBreedte / 2 + vijandDiameter / 2) {
     if (!schildActief) {
-      levens--;
-      if (levens > 0) {
-        respawnSpeler(); // respawn de speler als hij levens over heeft
+      medicijnen--;
+      if (medicijnen > 0) {
+        respawnSpeler(); // respawn de speler als hij medicijnen over heeft
         schildActief = true;
         schildBeginTijd = millis();
       }
@@ -169,9 +183,9 @@ var verwerkBotsing = function() {
     var afstandKogelSpeler = dist(spelerX, spelerY, kogels[i].x, kogels[i].y);
     if (afstandKogelSpeler < spelerBreedte / 2) {
       if (!schildActief) {
-        levens--;
-        if (levens > 0) {
-          respawnSpeler(); // respawn de speler als hij levens over heeft
+        medicijnen--;
+        if (medicijnen > 0) {
+          respawnSpeler(); // respawn de speler als hij medicijnen over heeft
           schildActief = true;
           schildBeginTijd = millis();
         }
@@ -180,9 +194,11 @@ var verwerkBotsing = function() {
   }
 
   // update punten en health
+  score += 1; // Verhoog de score bij elke frame
+  hoogsteScore = max(hoogsteScore, score); // Update de hoogste score
 };
 
-// functie om de speler te laten respawnen met een schild
+// functie om de speler te laten respawnen met medicijnen
 var respawnSpeler = function() {
   spelerX = 600;
   spelerY = 600;
@@ -198,6 +214,27 @@ var beheerSchild = function() {
       schildActief = false;
     }
   }
+};
+
+// Functie om het schild van de speler te tekenen
+var tekenSchild = function() {
+  if (schildActief) {
+    // Teken een gele bubbel rond de speler om het schild weer te geven
+    noFill();
+    stroke('yellow');
+    strokeWeight(3);
+    ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte + 20, spelerHoogte + 20);
+  }
+};
+
+// Functie om de score en levens van de speler te tekenen
+var tekenUI = function() {
+  fill('white');
+  textSize(20);
+  textAlign(LEFT);
+  text("Levens: " + medicijnen, 20, 40); // Tekent aantal levens
+  text("Score: " + score, 20, 70); // Tekent de score
+  text("Hoogste Score: " + hoogsteScore, 20, 100); // Tekent de hoogste score
 };
 
 function updateSpelerPositie() {  
@@ -240,28 +277,33 @@ var tekenAlles = function() {
   // kogels van de vijand
   tekenKogels();
 
+  // Teken de medicijnen
+  for (var i = 0; i < medicijnen; i++) {
+    fill("red");
+    ellipse(30 + i * 30, 20, 20, 20); // Tekent een rood cirkel voor elk medicijn
+  }
 
+  // Teken het schild van de speler
+  tekenSchild();
+
+  // Speler
   fill("goldenrod"); 
   ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte, spelerHoogte); 
-  fill("black");
-  ellipse(spelerX + 30, spelerY + 15, 10, 10); 
-  ellipse(spelerX + 70, spelerY + 15, 10, 10); 
-  rect(spelerX + 25, spelerY + 30, 50, 10); 
+ 
 
-  // punten en health
-  fill("white");
-  text("Levens: " + levens, 10, 20);
+  // Teken de UI
+  tekenUI();
 };
 
 // functie om het game-over scherm te tekenen
 var tekenGameOverScherm = function() {
-  background('black');
+  background('purple');
   fill('white');
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Game Over", width / 2, height / 2);
   textSize(30);
-  text("Opnieuw spelen", width / 2, height / 2 + 50);
+  text("terug naar menu", width / 2, height / 2 + 50);
 };
 
 /* ********************************************* */
@@ -294,7 +336,7 @@ function draw() {
     beheerSchild();
     verwerkBotsing();
     tekenAlles();
-    if (levens <= 0) {
+    if (medicijnen <= 0) {
       spelStatus = GAMEOVER;
     }
   }
