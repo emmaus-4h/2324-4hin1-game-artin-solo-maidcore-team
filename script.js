@@ -31,27 +31,52 @@ var spelerSnelheidY = 0; // snelheid van de speler in de y-richting
 /* functies die je gebruikt in je game           */
 /* ********************************************* */
 
-
+// Functie om het startscherm te tekenen
 var tekenStartScherm = function() {
-  
   background('black');
   fill('white');
   textSize(50);
   textAlign(CENTER, CENTER);
-  text("Nijiura Nights", width / 2, height / 2 - 50);
+  text("Welkom bij het spel", width / 2, height / 2 - 50);
   textSize(30);
-  text("press the button to start", width / 2, height / 2 + 50);
+  text("Begin", width / 2, height / 2 + 50);
 };
 
 
 
-
-
+// Functie om de muisinteractie te controleren
 function mouseClicked() {
-  if (spelStatus === STARTSCHERM && mouseX > width / 2 - 100 && mouseX < width / 2 + 100 && mouseY > height / 2 - 25 && mouseY < height / 2 + 25) {
-    spelStatus = SPELEN; 
+  if (spelStatus === STARTSCHERM && mouseX > width / 2 - 50 && mouseX < width / 2 + 50 && mouseY > height / 2 + 25 && mouseY < height / 2 + 75) {
+    spelStatus = SPELEN; // Begin knop
+  } else if (spelStatus === GAMEOVER && mouseX > width / 2 - 100 && mouseX < width / 2 + 100 && mouseY > height / 2 + 25 && mouseY < height / 2 + 75) {
+    resetSpel(); // Opnieuw knop
   }
 }
+
+// Functie om het spel te resetten
+function resetSpel() {
+  spelStatus = STARTSCHERM;
+  levens = 3;
+  spelerX = 600;
+  spelerY = 600;
+  health = 100;
+  vijandX = 100;
+  vijandY = 200;
+  kogels = [];
+}
+
+// Setup functie
+function setup() {
+  createCanvas(1280, 720);
+}
+
+// Draw functie
+function draw() {
+  tekenSchermen();
+}
+
+
+
 
 
 // functie om de positie van de vijand te updaten
@@ -215,12 +240,13 @@ var tekenAlles = function() {
   // kogels van de vijand
   tekenKogels();
 
-  
+
   fill("goldenrod"); 
   ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte, spelerHoogte); 
-  
-  
-  
+  fill("black");
+  ellipse(spelerX + 30, spelerY + 15, 10, 10); 
+  ellipse(spelerX + 70, spelerY + 15, 10, 10); 
+  rect(spelerX + 25, spelerY + 30, 50, 10); 
 
   // punten en health
   fill("white");
@@ -234,6 +260,8 @@ var tekenGameOverScherm = function() {
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Game Over", width / 2, height / 2);
+  textSize(30);
+  text("Opnieuw spelen", width / 2, height / 2 + 50);
 };
 
 /* ********************************************* */
@@ -252,11 +280,16 @@ function setup() {
   // Kleur de achtergrond blauw, zodat je het kunt zien
 }
 
-
+/**
+ * draw
+ * de code in deze functie wordt 50 keer per seconde
+ * uitgevoerd door de p5 library, nadat de setup functie klaar is
+ */
 function draw() {
   if (spelStatus === STARTSCHERM) {
     tekenStartScherm();
-  } else if (spelStatus === SPELEN) {
+  }
+  if (spelStatus === SPELEN) {
     beweegAlles();
     beheerSchild();
     verwerkBotsing();
@@ -264,7 +297,8 @@ function draw() {
     if (levens <= 0) {
       spelStatus = GAMEOVER;
     }
-  } else if (spelStatus === GAMEOVER) {
+  }
+  if (spelStatus === GAMEOVER) {
     tekenGameOverScherm();
   }
-};
+}
