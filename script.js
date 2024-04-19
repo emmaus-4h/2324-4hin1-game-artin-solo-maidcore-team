@@ -33,11 +33,11 @@ var spelerSnelheidY = 0; // snelheid van de speler in de y-richting
 
 // Functie om het startscherm te tekenen
 var tekenStartScherm = function() {
-  background('black');
-  fill('white');
+  background('#E798F9');
+  fill('#FF046B');
   textSize(50);
   textAlign(CENTER, CENTER);
-  text("Welkom bij het spel", width / 2, height / 2 - 50);
+  text("Nijiura Nights", width / 2, height / 2 - 50);
   textSize(30);
   text("Begin", width / 2, height / 2 + 50);
 };
@@ -232,7 +232,7 @@ function updateSpelerPositie() {
  */
 var tekenAlles = function() {
   // achtergrond
-  background('blue');
+  background('#31043C');
 
   // vijand
   tekenVijand();
