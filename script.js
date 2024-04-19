@@ -3,8 +3,8 @@
 /* ********************************************* */
 const SPELEN = 1;
 const GAMEOVER = 2;
-var spelStatus = SPELEN;
-
+const STARTSCHERM = 0;
+var spelStatus = STARTSCHERM;
 var levens = 3; // aantal levens van de speler
 var schildTijd = 2; // tijd in seconden voor het schild
 var schildActief = false; // geeft aan of het schild actief is
@@ -30,6 +30,29 @@ var spelerSnelheidY = 0; // snelheid van de speler in de y-richting
 /* ********************************************* */
 /* functies die je gebruikt in je game           */
 /* ********************************************* */
+
+
+var tekenStartScherm = function() {
+  
+  background('black');
+  fill('white');
+  textSize(50);
+  textAlign(CENTER, CENTER);
+  text("Nijiura Nights", width / 2, height / 2 - 50);
+  textSize(30);
+  text("press the button to start", width / 2, height / 2 + 50);
+};
+
+
+
+
+
+function mouseClicked() {
+  if (spelStatus === STARTSCHERM && mouseX > width / 2 - 100 && mouseX < width / 2 + 100 && mouseY > height / 2 - 25 && mouseY < height / 2 + 25) {
+    spelStatus = SPELEN; 
+  }
+}
+
 
 // functie om de positie van de vijand te updaten
 var beweegVijand = function() {
@@ -195,10 +218,9 @@ var tekenAlles = function() {
   
   fill("goldenrod"); 
   ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, spelerBreedte, spelerHoogte); 
-  fill("black");
-  ellipse(spelerX + 30, spelerY + 15, 10, 10); 
-  ellipse(spelerX + 70, spelerY + 15, 10, 10); 
-  rect(spelerX + 25, spelerY + 30, 50, 10); 
+  
+  
+  
 
   // punten en health
   fill("white");
@@ -230,13 +252,11 @@ function setup() {
   // Kleur de achtergrond blauw, zodat je het kunt zien
 }
 
-/**
- * draw
- * de code in deze functie wordt 50 keer per seconde
- * uitgevoerd door de p5 library, nadat de setup functie klaar is
- */
+
 function draw() {
-  if (spelStatus === SPELEN) {
+  if (spelStatus === STARTSCHERM) {
+    tekenStartScherm();
+  } else if (spelStatus === SPELEN) {
     beweegAlles();
     beheerSchild();
     verwerkBotsing();
@@ -244,8 +264,7 @@ function draw() {
     if (levens <= 0) {
       spelStatus = GAMEOVER;
     }
-  }
-  if (spelStatus === GAMEOVER) {
+  } else if (spelStatus === GAMEOVER) {
     tekenGameOverScherm();
   }
-}
+};
