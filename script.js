@@ -17,7 +17,7 @@ var spelerBreedte = 25; // breedte van de speler (2 keer kleiner)
 var spelerHoogte = 25; // hoogte van de speler (2 keer kleiner)
 var spelerX = 600; // x-positie van speler
 var spelerY = 600; // y-positie van speler
-var health = 100;  // health van speler
+var health = 1;  // health van speler
 var score = 0; // score van de speler
 var hoogsteScore = 0; // hoogste score bereikt door de speler
 
@@ -28,9 +28,17 @@ var vijandSpeed = 3; // snelheid van de vijand
 var vijandDirection = 1; // richting van de vijand (1 voor rechts, -1 voor links)
 
 var kogels = []; // array om kogels van de vijand bij te houden
+var spelerKogels = []; // array om kogels van de speler bij te houden
+var zigzagOffset = 0;
+var zigzagDirection = 1;
+
 
 var spelerSnelheidX = 0; // snelheid van de speler in de x-richting
 var spelerSnelheidY = 0; // snelheid van de speler in de y-richting
+
+var spelerFireRate = 7; // Fire rate van de speler kogels
+var spelerKogelSpeed = 10; // Snelheid van de speler kogels
+var spelerKogelDamage = 50; // Schade van de speler kogels
 
 /* ********************************************* */
 /* functies die je gebruikt in je game           */
@@ -65,7 +73,7 @@ var tekenLevelScherm = function() {
 function mouseClicked() {
   if (spelStatus === STARTSCHERM) {
     if (mouseX > width / 2 - 50 && mouseX < width / 2 + 50 && mouseY > height / 2 + 25 && mouseY < height / 2 + 75) {
-      
+
       spelStatus = LEVELSCHERM; // Levels knop
     }
   } else if (spelStatus === LEVELSCHERM) {
@@ -89,10 +97,11 @@ function resetSpel() {
   medicijnen = 3;
   spelerX = 600;
   spelerY = 600;
-  health = 100;
+  health = 1;
   vijandX = 100;
   vijandY = 200;
   kogels = [];
+  spelerKogels = []; // Reset de speler kogels
   score = 0; // Reset de score
 }
 
@@ -126,6 +135,7 @@ function speelLevel1() {
   beweegAlles();
   beheerSchild();
   verwerkBotsing();
+  verwerkSpelerBotsing();
   tekenAlles();
   if (medicijnen <= 0) {
     spelStatus = GAMEOVER;
@@ -247,6 +257,66 @@ var tekenKogels = function() {
   }
 };
 
+// functie om kogels te maken
+var maakKogels = function(type) {
+  var kogelType = {
+    diameter: 10,
+    snelheid: 2
+  };
+  if (type === 'spiraal') {
+    // Spiraalpatroon
+    for (var i = 0; i < 20; i++) {
+      var hoek = TWO_PI / 20 * i + frameCount * 0.1;
+      var kogel = {
+        x: vijandX,
+        y: vijandY,
+        diameter: kogelType.diameter,
+        snelheidX: cos(hoek) * kogelType.snelheid,
+        snelheidY: sin(hoek) * kogelType.snelheid
+      };
+      kogels.push(kogel);
+    }
+  }
+};
+
+// functie om kogels van de vijand te tekenen
+var tekenKogels = function() {
+  for (var i = 0; i < kogels.length; i++) {
+    var kogel = kogels[i];
+    if (kogel.kleur === 'groot') {
+      // Teken de grote kogels zoals in de afbeelding
+      noStroke();
+      fill(255, 0, 0);
+      ellipse(kogel.x, kogel.y, kogel.diameter * 0.5); // Rode kern
+      stroke(255);
+      strokeWeight(4);
+      fill(255, 255, 255, 150);
+      ellipse(kogel.x, kogel.y, kogel.diameter); // Witte buitenrand
+      strokeWeight(2);
+      noFill();
+      stroke(255, 0, 0);
+      ellipse(kogel.x, kogel.y, kogel.diameter + 10); // Extra rode rand
+    } else {
+      // Normale kogels
+      stroke('#000000'); // zwarte rand voor de kogel
+      strokeWeight(2); // dikte van de rand
+      fill('#FFFFFF'); // witte kleur voor de kogel
+      var hoek = atan2(kogel.snelheidY, kogel.snelheidX) + PI / 4;
+      hoek += PI / 4;
+      push(); // Bewaar de huidige transformatie-instellingen
+      translate(kogel.x, kogel.y); // Verplaats naar de positie van de kogel
+      rotate(hoek); // Roteer de kogel naar de berekende hoek
+      // Teken de kogel als een driehoek om de punt van het mes te simuleren
+      beginShape();
+      vertex(-4, 0); // linkerbovenhoek
+      vertex(4, 0); // rechterbovenhoek
+      vertex(0, 30); // punt van de kogel (verlengde diagonale lijn)
+      endShape(CLOSE);
+      pop(); // Herstel de oorspronkelijke transformatie-instellingen
+    }
+  }
+};
+
 // functie om de positie van de kogels te updaten
 var beweegKogels = function() {
   for (var i = 0; i < kogels.length; i++) {
@@ -272,7 +342,88 @@ var tekenVijand = function() {
   ellipse(vijandX, vijandY, vijandDiameter, vijandDiameter);
 };
 
+// functie om speler kogels te schieten
+var schietSpelerKogels = function() {
+  if (frameCount % spelerFireRate === 0) {
+    var kogel1 = {
+      x: spelerX + spelerBreedte / 2 - 15,
+      y: spelerY,
+      breedte: 20,
+      hoogte: 20,
+      snelheidY: -spelerKogelSpeed,
+      damage: spelerKogelDamage
+    };
+    var kogel2 = {
+      x: spelerX + spelerBreedte / 2 + 15,
+      y: spelerY - 50, 
+      breedte: 20,
+      hoogte: 20,
+      snelheidY: -spelerKogelSpeed,
+      damage: spelerKogelDamage
+    };
 
+    spelerKogels.push(kogel1, kogel2);
+  }
+};
+
+// functie om de speler kogels te tekenen
+var tekenSpelerKogels = function() {
+  for (var i = 0; i < spelerKogels.length; i++) {
+    var kogel = spelerKogels[i];
+    drawCheeseburger(kogel.x, kogel.y, kogel.breedte, kogel.hoogte);
+  }
+};
+
+var drawCheeseburger = function(x, y, breedte, hoogte) {
+  // Teken het broodje onderkant
+  fill('#D4A017');
+  rect(x - breedte / 2, y + hoogte / 4, breedte, hoogte / 4);
+  // Teken de hamburger
+  fill('#A52A2A');
+  rect(x - breedte / 2, y, breedte, hoogte / 4);
+  // Teken de kaas
+  fill('#FFD700');
+  rect(x - breedte / 2, y - hoogte / 4, breedte, hoogte / 4);
+  // Teken het broodje bovenkant
+  fill('#D4A017');
+  rect(x - breedte / 2, y - hoogte / 2, breedte, hoogte / 4);
+};
+
+
+// functie om de positie van de speler kogels te updaten
+var beweegSpelerKogels = function() {
+  for (var i = 0; i < spelerKogels.length; i++) {
+    var kogel = spelerKogels[i];
+    kogel.y += kogel.snelheidY;
+    // Voeg zigzag beweging toe
+    kogel.x += zigzagDirection * 3; // Zigzag snelheid
+    zigzagOffset += 3;
+    if (zigzagOffset >= 30) { // Zigzag afstand
+      zigzagDirection *= -1;
+      zigzagOffset = 0;
+    }
+    if (kogel.y < 0) {
+      spelerKogels.splice(i, 1);
+      i--;
+    }
+  }
+};
+
+
+// functie om botsingen tussen speler kogels en vijanden te verwerken
+var verwerkSpelerBotsing = function() {
+  for (var i = 0; i < spelerKogels.length; i++) {
+    var kogel = spelerKogels[i];
+    if (dist(kogel.x, kogel.y, vijandX, vijandY) < vijandDiameter / 2) {
+      // Verwijder de kogel en verminder vijand health
+      spelerKogels.splice(i, 1);
+      i--;
+      // Implement your enemy health system here if you have one
+      // For now, just print a message
+      console.log("Vijand getroffen! Schade: " + kogel.damage);
+    }
+  }
+};
 
 // functie om alle objecten te tekenen
 var tekenAlles = function() {
@@ -280,11 +431,11 @@ var tekenAlles = function() {
   tekenSpeler();
   tekenVijand();
   tekenKogels();
+  tekenSpelerKogels(); // Teken de speler kogels
   fill("white");
   textSize(24);
   text("Score: " + score, 10, 30);
   text("Highscore: " + hoogsteScore, 10, 60);
-  text("Health: " + health, 10, 90);
   text("Medicijnen: " + medicijnen, 10, 120);
 
   // Schilder het schild van de speler
@@ -320,7 +471,7 @@ var verwerkBotsing = function() {
         i--;
         continue;
       }
-      health -= 10;
+      health -= 100;
       kogels.splice(i, 1);
       i--;
     }
@@ -336,6 +487,8 @@ var beweegAlles = function() {
   beweegSpeler();
   beweegVijand();
   beweegKogels();
+  beweegSpelerKogels(); // Beweeg de speler kogels
+  schietSpelerKogels(); // Schiet speler kogels
   score++;
   if (score > hoogsteScore) {
     hoogsteScore = score;
@@ -365,28 +518,3 @@ var tekenGameOverScherm = function() {
   text("Opnieuw", width / 2, height / 2 + 50);
 }
 
-/* ********************************************* */
-/* Level 2 functies                              */
-/* ********************************************* */
-
-function speelLevel2() {
-  // Voeg hier de code voor level 2 toe
-  background(100);
-  fill(255);
-  textSize(50);
-  textAlign(CENTER, CENTER);
-  text("Level 2", width / 2, height / 2);
-}
-
-/* ********************************************* */
-/* Level 3 functies                              */
-/* ********************************************* */
-
-function speelLevel3() {
-  // Voeg hier de code voor level 3 toe
-  background(150);
-  fill(255);
-  textSize(50);
-  textAlign(CENTER, CENTER);
-  text("Level 3", width / 2, height / 2);
-}
