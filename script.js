@@ -44,8 +44,8 @@ var tekenStartScherm = function() {
   textAlign(CENTER, CENTER);
   text("Nijiura Nights", width / 2, height / 2 - 50);
   textSize(30);
-  text("Begin", width / 2, height / 2 + 50);
-  text("Levels", width / 2, height / 2 + 100);
+  text("Levels", width / 2, height / 2 + 50);
+  text("", width / 2, height / 2 + 100);
 };
 
 // Functie om het levels scherm te tekenen
@@ -65,8 +65,7 @@ var tekenLevelScherm = function() {
 function mouseClicked() {
   if (spelStatus === STARTSCHERM) {
     if (mouseX > width / 2 - 50 && mouseX < width / 2 + 50 && mouseY > height / 2 + 25 && mouseY < height / 2 + 75) {
-      spelStatus = LEVEL1; // Begin knop
-    } else if (mouseX > width / 2 - 50 && mouseX < width / 2 + 50 && mouseY > height / 2 + 75 && mouseY < height / 2 + 125) {
+      
       spelStatus = LEVELSCHERM; // Levels knop
     }
   } else if (spelStatus === LEVELSCHERM) {
