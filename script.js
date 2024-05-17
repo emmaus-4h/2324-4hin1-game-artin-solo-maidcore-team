@@ -90,22 +90,159 @@ var beweegVijand = function() {
   schietKogel();
 };
 
-// functie om een kogel van de vijand te maken
+// Definieer verschillende kogeltypes
+var kogelTypes = [
+  { diameter: 10, snelheid: 4, patroon: 'cirkel' },  // normale kogels
+  { diameter: 80, snelheid: 2, patroon: 'groot' },   // veel grotere kogels
+  { diameter: 8, snelheid: 5, patroon: 'spiraal' }   // snellere spiraalkogels
+];
+
+// Functie om een kogel van de vijand te maken
 var schietKogel = function() {
-  if (frameCount % 60 === 0) { // schiet elke seconde
-    for (var i = 0; i < 20; i++) { // schiet 20 kogels tegelijkertijd
-      var hoek = TWO_PI / 20 * i; // bereken hoek voor patroon
+  // Normale en spiraalpatronen worden elke seconde afgeschoten
+  if (frameCount % 60 === 0) {
+    schietPatroon('cirkel');
+    schietPatroon('spiraal');
+  }
+  // Grote kogels worden elke drie seconden afgeschoten
+  if (frameCount % 180 === 0) {
+    schietPatroon('groot');
+  }
+};
+
+// Functie om een specifiek patroon te schieten
+var schietPatroon = function(type) {
+  var kogelType = kogelTypes.find(k => k.patroon === type);
+  if (!kogelType) return;
+
+  if (kogelType.patroon === 'cirkel') {
+    // Cirkelpatroon
+    for (var i = 0; i < 20; i++) {
+      var hoek = TWO_PI / 20 * i;
       var kogel = {
         x: vijandX,
         y: vijandY,
-        diameter: 10,
-        snelheidX: cos(hoek) * 5, // x-snelheid volgens hoek
-        snelheidY: sin(hoek) * 5 // y-snelheid volgens hoek
+        diameter: kogelType.diameter,
+        snelheidX: cos(hoek) * kogelType.snelheid,
+        snelheidY: sin(hoek) * kogelType.snelheid
       };
-      kogels.push(kogel); // voeg kogel toe aan de array
+      kogels.push(kogel);
+    }
+  } else if (kogelType.patroon === 'groot') {
+    // Grotere kogels in een kruispatroon
+    for (var i = 0; i < 8; i++) {
+      var hoek = HALF_PI / 2 * i;
+      var kogel = {
+        x: vijandX,
+        y: vijandY,
+        diameter: kogelType.diameter,
+        snelheidX: cos(hoek) * kogelType.snelheid,
+        snelheidY: sin(hoek) * kogelType.snelheid,
+        kleur: 'groot' // Markeer deze kogel voor speciale weergave
+      };
+      kogels.push(kogel);
+    }
+  } else if (kogelType.patroon === 'spiraal') {
+    // Spiraalpatroon
+    for (var i = 0; i < 20; i++) {
+      var hoek = TWO_PI / 20 * i + frameCount * 0.1;
+      var kogel = {
+        x: vijandX,
+        y: vijandY,
+        diameter: kogelType.diameter,
+        snelheidX: cos(hoek) * kogelType.snelheid,
+        snelheidY: sin(hoek) * kogelType.snelheid
+      };
+      kogels.push(kogel);
     }
   }
 };
+
+// functie om kogels van de vijand te tekenen
+var tekenKogels = function() {
+  for (var i = 0; i < kogels.length; i++) {
+    var kogel = kogels[i];
+    if (kogel.kleur === 'groot') {
+      // Teken de grote kogels zoals in de afbeelding
+      noStroke();
+      fill(255, 0, 0);
+      ellipse(kogel.x, kogel.y, kogel.diameter * 0.5); // Rode kern
+      stroke(255);
+      strokeWeight(4);
+      fill(255, 255, 255, 150);
+      ellipse(kogel.x, kogel.y, kogel.diameter); // Witte buitenrand
+      strokeWeight(2);
+      noFill();
+      stroke(255, 0, 0);
+      ellipse(kogel.x, kogel.y, kogel.diameter + 10); // Extra rode rand
+    } else {
+      // Normale kogels
+      stroke('#000000'); // zwarte rand voor de kogel
+      strokeWeight(2); // dikte van de rand
+      fill('#FFFFFF'); // witte kleur voor de kogel
+      var hoek = atan2(kogel.snelheidY, kogel.snelheidX) + PI / 4;
+      hoek += PI / 4;
+      push(); // Bewaar de huidige transformatie-instellingen
+      translate(kogel.x, kogel.y); // Verplaats naar de positie van de kogel
+      rotate(hoek); // Roteer de kogel naar de berekende hoek
+      // Teken de kogel als een driehoek om de punt van het mes te simuleren
+      beginShape();
+      vertex(-4, 0); // linkerbovenhoek
+      vertex(4, 0); // rechterbovenhoek
+      vertex(0, 30); // punt van de kogel (verlengde diagonale lijn)
+      endShape(CLOSE);
+      pop(); // Herstel de oorspronkelijke transformatie-instellingen
+    }
+  }
+};
+
+/**
+ * Updatet globale variabelen met posities van speler, vijanden en kogels
+ */
+var beweegAlles = function() {
+  // speler
+  updateSpelerPositie();
+
+  // vijand
+  beweegVijand();
+
+  // kogel van de vijand
+  for (var i = kogels.length - 1; i >= 0; i--) {
+    kogels[i].x += kogels[i].snelheidX;
+    kogels[i].y += kogels[i].snelheidY;
+
+    // Verwijder kogels die buiten het scherm zijn
+    if (kogels[i].x < 0 || kogels[i].x > width || kogels[i].y < 0 || kogels[i].y > height) {
+      kogels.splice(i, 1);
+    }
+  }
+};
+
+// Andere functies blijven hetzelfde
+
+// Zorg ervoor dat de setup- en draw-functies aanwezig zijn
+function setup() {
+  createCanvas(1280, 720);
+}
+
+function draw() {
+  if (spelStatus === STARTSCHERM) {
+    tekenStartScherm();
+  }
+  if (spelStatus === SPELEN) {
+    beweegAlles();
+    beheerSchild();
+    verwerkBotsing();
+    tekenAlles();
+    if (medicijnen <= 0) {
+      spelStatus = GAMEOVER;
+    }
+  }
+  if (spelStatus === GAMEOVER) {
+    tekenGameOverScherm();
+  }
+}
+
 
 // functie om de vijand te tekenen als Sakuya van Touhou
 var tekenVijand = function() {
@@ -117,30 +254,7 @@ var tekenVijand = function() {
   rect(vijandX - 20, vijandY + 10, 40, 10); // mond
 };
 
-// functie om kogels van de vijand te tekenen
-var tekenKogels = function() {
-  for (var i = 0; i < kogels.length; i++) {
-    // Teken een aangepaste kogel die lijkt op een mes
-    // De kogel wordt getekend als een driehoek om de punt van het mes te simuleren
-    stroke('#000000'); // zwarte rand voor de kogel
-    strokeWeight(2); // dikte van de rand
-    fill('#FFFFFF'); // witte kleur voor de kogel
-    // Bereken de hoek van de kogel met een extra 45 graden
-    var hoek = atan2(kogels[i].snelheidY, kogels[i].snelheidX) + PI/4;
-    // Nog eens 45 graden toevoegen aan de hoek
-    hoek += PI/4;
-    push(); // Bewaar de huidige transformatie-instellingen
-    translate(kogels[i].x, kogels[i].y); // Verplaats naar de positie van de kogel
-    rotate(hoek); // Roteer de kogel naar de berekende hoek
-    // Teken de kogel als een driehoek om de punt van het mes te simuleren
-    beginShape();
-    vertex(-4, 0); // linkerbovenhoek
-    vertex(4, 0); // rechterbovenhoek
-    vertex(0, 30); // punt van de kogel (verlengde diagonale lijn)
-    endShape(CLOSE);
-    pop(); // Herstel de oorspronkelijke transformatie-instellingen
-  }
-};
+
 
 /**
  * Updatet globale variabelen met posities van speler, vijanden en kogels
