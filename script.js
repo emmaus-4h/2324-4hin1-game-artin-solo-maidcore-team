@@ -126,6 +126,172 @@ function draw() {
     tekenGameOverScherm();
   }
 }
+/* ********************************************* */
+/* Level 2 functies                              */
+/* ********************************************* */
+
+function speelLevel2() {
+  beweegAllesLevel2();
+  beheerSchild();
+  verwerkBotsing();
+  verwerkSpelerBotsing();
+  tekenAllesLevel2();
+  if (medicijnen <= 0) {
+    spelStatus = GAMEOVER;
+  }
+}
+
+var vijandenLevel2 = [];
+var vijandSpawnTimer = 0;
+var vijandenSpawned = 0; // Houd het aantal gespawnde vijanden bij
+
+// Functie om de vijanden van Level 2 te maken
+function initLevel2() {
+  vijandenLevel2 = [];
+  vijandSpawnTimer = 0;
+  vijandenSpawned = 0; // Reset het aantal gespawnde vijanden
+}
+
+var vasteYPositie = 100; // Stel hier de gewenste y-positie in
+
+// Functie om de vijanden van Level 2 te spawnen
+function spawnVijandenLevel2() {
+  if (vijandenSpawned >= 20) {
+    // Stop met spawnen als er 20 vijanden zijn gespawned
+    return;
+  }
+
+  if (vijandSpawnTimer <= 0) {
+    for (var i = 0; i < 6; i++) {
+      var vijand = {
+        x: i % 2 === 0 ? 0 : width, // Spawnen aan linkerkant of rechterkant
+        y: vasteYPositie, // Gebruik de vaste y-positie
+        breedte: 30,
+        hoogte: 30,
+        snelheidX: i % 2 === 0 ? 4 : -4, // Bewegen naar rechts of links
+        schietTijd: frameCount + random(30, 60), // Schiet tijd na een willekeurig aantal frames
+        levens: 1 // Vijanden hebben 1 HP
+      };
+      vijandenLevel2.push(vijand);
+      vijandenSpawned++; // Verhoog het aantal gespawnde vijanden
+    }
+    vijandSpawnTimer = 60; // Reset de timer naar 1 seconde
+  }
+  vijandSpawnTimer--;
+}
+
+// Functie om de vijanden van Level 2 te bewegen en schieten
+function beweegVijandenLevel2() {
+  for (var i = 0; i < vijandenLevel2.length; i++) {
+    var vijand = vijandenLevel2[i];
+    vijand.x += vijand.snelheidX;
+    if (vijand.x < 0 || vijand.x > width) {
+      vijandenLevel2.splice(i, 1); // Verwijder vijand als deze buiten beeld gaat
+      i--;
+    } else if (frameCount >= vijand.schietTijd) {
+      schietKogelsVijandLevel2(vijand);
+      vijand.schietTijd = frameCount + random(30, 60); // Nieuwe schiettijd instellen
+    }
+  }
+}
+
+// Functie om kogels van de vijanden van Level 2 te schieten
+function schietKogelsVijandLevel2(vijand) {
+  for (var i = 0; i < 8; i++) {
+    var hoek = PI / 4 * i;
+    var kogel = {
+      x: vijand.x + vijand.breedte / 2,
+      y: vijand.y + vijand.hoogte / 2,
+      diameter: 20, // Maak de kogel groter
+      snelheidX: cos(hoek) * 4,
+      snelheidY: sin(hoek) * 4,
+      kleur: color(255, 0, 0), // Rode kleur voor de kogel
+    };
+    kogels.push(kogel);
+  }
+}
+
+// Functie om alles van Level 2 te bewegen
+function beweegAllesLevel2() {
+  beweegSpeler();
+  beweegVijandenLevel2();
+  beweegKogels();
+  beweegSpelerKogels();
+  verwerkVijandSpelerKogelBotsing(); // Verwerk botsing tussen spelerkogels en vijanden
+  schietSpelerKogels();
+  spawnVijandenLevel2(); // Spawn vijanden continu
+  score++;
+  if (score > hoogsteScore) {
+    hoogsteScore = score;
+  }
+}
+
+// Functie om botsing tussen spelerkogels en vijanden te verwerken
+function verwerkVijandSpelerKogelBotsing() {
+  for (var i = 0; i < spelerKogels.length; i++) {
+    var spelerKogel = spelerKogels[i];
+    for (var j = 0; j < vijandenLevel2.length; j++) {
+      var vijand = vijandenLevel2[j];
+      if (
+        spelerKogel.x > vijand.x &&
+        spelerKogel.x < vijand.x + vijand.breedte &&
+        spelerKogel.y > vijand.y &&
+        spelerKogel.y < vijand.y + vijand.hoogte
+      ) {
+        vijandenLevel2.splice(j, 1); // Verwijder de vijand
+        spelerKogels.splice(i, 1); // Verwijder de kogel
+        i--;
+        break;
+      }
+    }
+  }
+}
+
+// Functie om alles van Level 2 te tekenen
+function tekenAllesLevel2() {
+  background('black');
+  tekenSpeler();
+  tekenKogels();
+  tekenSpelerKogels();
+  fill("white");
+  textSize(24);
+  text("Score: " + score, 10, 30);
+  text("Highscore: " + hoogsteScore, 10, 60);
+  text("Medicijnen: " + medicijnen, 10, 120);
+
+  // Teken de vijanden van Level 2
+  for (var i = 0; i < vijandenLevel2.length; i++) {
+    var vijand = vijandenLevel2[i];
+    fill ('red');
+          rect(vijand.x, vijand.y, vijand.breedte, vijand.hoogte);
+        }
+
+        // Schilder het schild van de speler
+        if (schildActief) {
+          fill(0, 0, 255, 100); // blauwe doorzichtige kleur
+          ellipse(spelerX + spelerBreedte / 2, spelerY + spelerHoogte / 2, 50, 50);
+        }
+      }
+
+      // Functie om het spel te resetten
+      function resetSpel() {
+        spelStatus = STARTSCHERM;
+        medicijnen = 3;
+        spelerX = 600;
+        spelerY = 600;
+        health = 1;
+        vijandX = 100;
+        vijandY = 200;
+        kogels = [];
+        spelerKogels = []; // Reset de speler kogels
+        score = 0; // Reset de score
+      }
+
+
+
+
+
+
 
 /* ********************************************* */
 /* Level 1 functies                              */
