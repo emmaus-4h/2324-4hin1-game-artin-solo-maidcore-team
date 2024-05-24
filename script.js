@@ -32,7 +32,6 @@ var spelerKogels = []; // array om kogels van de speler bij te houden
 var zigzagOffset = 0;
 var zigzagDirection = 1;
 
-
 var spelerSnelheidX = 0; // snelheid van de speler in de x-richting
 var spelerSnelheidY = 0; // snelheid van de speler in de y-richting
 
@@ -61,7 +60,7 @@ var tekenLevelScherm = function() {
   background('#E798F9');
   fill('#FF046B');
   textSize(50);
-  textAlign(CENTER, CENTER);
+  textAlign(CENTER, CENTER)  ;
   text("Kies een Level", width / 2, height / 2 - 150);
   textSize(30);
   text("Level 1", width / 2, height / 2 - 50);
@@ -198,13 +197,13 @@ function beweegVijandenLevel2() {
 // Functie om kogels van de vijanden van Level 2 te schieten
 function schietKogelsVijandLevel2(vijand) {
   for (var i = 0; i < 8; i++) {
-    var hoek = PI / 4 * i;
+    var hoek = PI / 7 * i;
     var kogel = {
       x: vijand.x + vijand.breedte / 2,
       y: vijand.y + vijand.hoogte / 2,
       diameter: 20, // Maak de kogel groter
-      snelheidX: cos(hoek) * 4,
-      snelheidY: sin(hoek) * 4,
+      snelheidX: cos(hoek) * 10,
+      snelheidY: sin(hoek) * 3,
       kleur: color(255, 0, 0), // Rode kleur voor de kogel
     };
     kogels.push(kogel);
@@ -286,11 +285,6 @@ function tekenAllesLevel2() {
         spelerKogels = []; // Reset de speler kogels
         score = 0; // Reset de score
       }
-
-
-
-
-
 
 
 /* ********************************************* */
@@ -683,4 +677,3 @@ var tekenGameOverScherm = function() {
   textSize(30);
   text("Opnieuw", width / 2, height / 2 + 50);
 }
-
