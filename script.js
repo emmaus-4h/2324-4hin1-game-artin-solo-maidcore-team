@@ -39,13 +39,14 @@ var spelerFireRate = 7; // Fire rate van de speler kogels
 var spelerKogelSpeed = 10; // Snelheid van de speler kogels
 var spelerKogelDamage = 50; // Schade van de speler kogels
 
+var img;
 /* ********************************************* */
 /* functies die je gebruikt in je game           */
 /* ********************************************* */
 
 // Functie om het startscherm te tekenen
 var tekenStartScherm = function() {
-  background('#E798F9');
+  background('#111111');
   fill('#FF046B');
   textSize(50);
   textAlign(CENTER, CENTER);
@@ -53,6 +54,7 @@ var tekenStartScherm = function() {
   textSize(30);
   text("Levels", width / 2, height / 2 + 50);
   text("", width / 2, height / 2 + 100);
+  image(img, 30, 0,);
 };
 
 // Functie om het levels scherm te tekenen
@@ -66,6 +68,8 @@ var tekenLevelScherm = function() {
   text("Level 1", width / 2, height / 2 - 50);
   text("Level 2", width / 2, height / 2 + 50);
   text("Level 3", width / 2, height / 2 + 150);
+  image(img2, 30, 0,);
+  
 };
 
 // Functie om de muisinteractie te controleren
@@ -105,6 +109,13 @@ function resetSpel() {
 }
 
 // Setup functie
+
+function preload()  {
+  img = loadImage('maid.png')
+  img2 = loadImage('temple.png')
+  img3 = loadImage('dead.png')
+}
+
 function setup() {
   createCanvas(1280, 720);
 }
@@ -570,17 +581,25 @@ var beweegSpelerKogels = function() {
 };
 
 
-// functie om botsingen tussen speler kogels en vijanden te verwerken
+// functie om botsingen tussen de speler en vijandelijke kogels te verwerken
 var verwerkSpelerBotsing = function() {
-  for (var i = 0; i < spelerKogels.length; i++) {
-    var kogel = spelerKogels[i];
-    if (dist(kogel.x, kogel.y, vijandX, vijandY) < vijandDiameter / 2) {
-      // Verwijder de kogel en verminder vijand health
-      spelerKogels.splice(i, 1);
+  for (var i = 0; i < kogels.length; i++) {
+    var kogel = kogels[i];
+    if (
+      spelerX < kogel.x + kogel.diameter &&
+      spelerX + spelerBreedte > kogel.x &&
+      spelerY < kogel.y + kogel.diameter &&
+      spelerY + spelerHoogte > kogel.y
+    ) {
+      // Verwijder de kogel en verminder de gezondheid van de speler
+      kogels.splice(i, 1);
+      if (!schildActief) {
+        medicijnen--;
+        if (medicijnen <= 0) {
+          spelStatus = GAMEOVER;
+        }
+      }
       i--;
-      // Implement your enemy health system here if you have one
-      // For now, just print a message
-      console.log("Vijand getroffen! Schade: " + kogel.damage);
     }
   }
 };
@@ -619,6 +638,8 @@ var beweegSpeler = function() {
   if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) { // Omlaag (S)
     spelerY += 5;
   }
+  spelerX = constrain(spelerX, 0, width - spelerBreedte);
+  spelerY = constrain(spelerY, 0, height - spelerHoogte);
 };
 
 // functie om botsingen te verwerken
@@ -676,4 +697,5 @@ var tekenGameOverScherm = function() {
   text("GAME OVER", width / 2, height / 2 - 50);
   textSize(30);
   text("Opnieuw", width / 2, height / 2 + 50);
+   image(img3, 800, 250, 500, 500);
 }
