@@ -8,7 +8,7 @@ const LEVEL2 = 4;
 const LEVEL3 = 5;
 const GAMEOVER = 2;
 var spelStatus = STARTSCHERM;
-var medicijnen = 3; // aantal medicijnen van de speler
+var medicijnen = 6; // aantal medicijnen van de speler
 var schildTijd = 2; // tijd in seconden voor het schild
 var schildActief = false; // geeft aan of het schild actief is
 var schildBeginTijd = 0; // tijd waarop het schild begint
@@ -26,6 +26,7 @@ var vijandY = 200; // y-positie van vijand
 var vijandDiameter = 100; // diameter van de vijand (2 keer groter)
 var vijandSpeed = 3; // snelheid van de vijand
 var vijandDirection = 1; // richting van de vijand (1 voor rechts, -1 voor links)
+var vijandLevens = 300; // Aantal levens van de vijand
 
 var kogels = []; // array om kogels van de vijand bij te houden
 var spelerKogels = []; // array om kogels van de speler bij te houden
@@ -40,6 +41,7 @@ var spelerKogelSpeed = 10; // Snelheid van de speler kogels
 var spelerKogelDamage = 50; // Schade van de speler kogels
 
 var img;
+
 /* ********************************************* */
 /* functies die je gebruikt in je game           */
 /* ********************************************* */
@@ -114,6 +116,9 @@ function preload()  {
   img = loadImage('maid.png')
   img2 = loadImage('temple.png')
   img3 = loadImage('dead.png')
+  afbeeldingSpeler = loadImage('sakuya.png');
+  afbeeldingVijand = loadImage('yakui.png');
+  
 }
 
 function setup() {
@@ -178,8 +183,8 @@ function spawnVijandenLevel2() {
         y: vasteYPositie, // Gebruik de vaste y-positie
         breedte: 30,
         hoogte: 30,
-        snelheidX: i % 2 === 0 ? 4 : -4, // Bewegen naar rechts of links
-        schietTijd: frameCount + random(30, 60), // Schiet tijd na een willekeurig aantal frames
+        snelheidX: i % 2 === 0 ? 2 : -3, // Bewegen naar rechts of links
+        schietTijd: frameCount + random(30, 400), // Schiet tijd na een willekeurig aantal frames
         levens: 1 // Vijanden hebben 1 HP
       };
       vijandenLevel2.push(vijand);
@@ -208,13 +213,13 @@ function beweegVijandenLevel2() {
 // Functie om kogels van de vijanden van Level 2 te schieten
 function schietKogelsVijandLevel2(vijand) {
   for (var i = 0; i < 8; i++) {
-    var hoek = PI / 7 * i;
+    var hoek = PI / 4 * i;
     var kogel = {
       x: vijand.x + vijand.breedte / 2,
       y: vijand.y + vijand.hoogte / 2,
       diameter: 20, // Maak de kogel groter
       snelheidX: cos(hoek) * 10,
-      snelheidY: sin(hoek) * 3,
+      snelheidY: sin(hoek) * 5,
       kleur: color(255, 0, 0), // Rode kleur voor de kogel
     };
     kogels.push(kogel);
@@ -286,12 +291,13 @@ function tekenAllesLevel2() {
       // Functie om het spel te resetten
       function resetSpel() {
         spelStatus = STARTSCHERM;
-        medicijnen = 3;
+        medicijnen = 6;
         spelerX = 600;
         spelerY = 600;
         health = 1;
         vijandX = 100;
         vijandY = 200;
+        vijandLevens = 300; 
         kogels = [];
         spelerKogels = []; // Reset de speler kogels
         score = 0; // Reset de score
@@ -320,24 +326,46 @@ var beweegVijand = function() {
   }
   vijandX += vijandSpeed * vijandDirection;
   schietKogel();
-};
+
+  // Controleer of de vijand geraakt is door een spelerkogel
+    for (var i = 0; i < spelerKogels.length; i++) {
+      var kogel = spelerKogels[i];
+      if (
+        kogel.x > vijandX &&
+        kogel.x < vijandX + vijandDiameter &&
+        kogel.y > vijandY &&
+        kogel.y < vijandY + vijandDiameter
+      ) {
+        vijandLevens--; // Verminder de levens van de vijand
+        spelerKogels.splice(i, 1); // Verwijder de kogel
+        i--;
+
+        if (vijandLevens <= 0) {
+          // Als vijand geen levens meer heeft, win je
+          spelStatus = STARTSCHERM; // Terug naar het startscherm
+          alert("Gewonnen!"); // Toon een bericht dat je gewonnen hebt
+          resetSpel(); // Reset het spel
+        }
+      }
+    }
+  };
 
 // Definieer verschillende kogeltypes
 var kogelTypes = [
-  { diameter: 10, snelheid: 4, patroon: 'cirkel' },  // normale kogels
-  { diameter: 80, snelheid: 2, patroon: 'groot' },   // veel grotere kogels
-  { diameter: 8, snelheid: 5, patroon: 'spiraal' }   // snellere spiraalkogels
+  { diameter: 10, snelheid: 3, patroon: 'cirkel' },  // normale kogels
+  { diameter: 200, snelheid: 2, patroon: 'groot' },   // veel grotere kogels
+  { diameter: 8, snelheid: 4, patroon: 'spiraal' }   // snellere spiraalkogels
 ];
 
 // Functie om een kogel van de vijand te maken
 var schietKogel = function() {
   // Normale en spiraalpatronen worden elke seconde afgeschoten
-  if (frameCount % 60 === 0) {
+  if (frameCount % 120 === 0) {
     schietPatroon('cirkel');
     schietPatroon('spiraal');
   }
   // Grote kogels worden elke drie seconden afgeschoten
-  if (frameCount % 180 === 0) {
+  if (frameCount % 600 === 0) {
     schietPatroon('groot');
   }
 };
@@ -501,17 +529,22 @@ var beweegKogels = function() {
   }
 };
 
+// Laden van afbeeldingen
+var afbeeldingSpeler;
+var afbeeldingVijand;
+
+
+
 // functie om de speler te tekenen
 var tekenSpeler = function() {
-  fill('#39FF14');
-  rect(spelerX, spelerY, spelerBreedte, spelerHoogte);
+  image(afbeeldingSpeler, spelerX, spelerY, 50, 75);
 };
 
 // functie om de vijand te tekenen
 var tekenVijand = function() {
-  fill('red');
-  ellipse(vijandX, vijandY, vijandDiameter, vijandDiameter);
+  image(afbeeldingVijand, vijandX * 0.8 + 30, vijandY - 120, 400, 300);
 };
+
 
 // functie om speler kogels te schieten
 var schietSpelerKogels = function() {
@@ -616,7 +649,10 @@ var tekenAlles = function() {
   text("Score: " + score, 10, 30);
   text("Highscore: " + hoogsteScore, 10, 60);
   text("Medicijnen: " + medicijnen, 10, 120);
-
+  // Teken het aantal levens van de vijand
+  fill('white');
+  textSize(20);
+  text("Vijand Levens: " + vijandLevens, width - 150, 30);
   // Schilder het schild van de speler
   if (schildActief) {
     fill(0, 0, 255, 100); // blauwe doorzichtige kleur
